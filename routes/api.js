@@ -12,8 +12,20 @@ UPDATE  Add new products to the product line.
 DELETE  Delete entire stores, delete products
 */
 
-//CREATE
+//READ
 
+router.post('/shopify/browse',(req,res)=>{
+  Shop.findOne({ShopName:req.body.ShopName},function(err,store){
+     if(err) throw err;
+    if(store){
+       res.send(store.ProductLine);
+    }else{
+      res.send('Store not found!!')
+    }
+  })
+});
+
+//CREATE
 /*
 {
  OwnerName:Jack,
@@ -38,6 +50,8 @@ router.post('/shopify/CreateStore',(req,res)=>{
     })
      });
 
+
+// UPDATE
 //We need a purchase/Line order route.
 //The request made to this route looks as follows:
 /*
@@ -53,51 +67,72 @@ IF product doesn't exist -> res.send err
 IF quantity < 0 || quantity > quantity in stock -> Invalid quantity
 Else, find the product, the associated price and return the result
 */
-router.post('/shopify/purchased',(req,res)=>{
-    Shop.findOne({ShopName:req.body.ShopName},function(err,Shop){
+router.post('/shopify/purchase',(req,res)=>{
+    Shop.findOne({ShopName:req.body.ShopName},function(err,store){
        if(err) throw err;
-      if(Shop){
+      if(store){
            var product=req.body.Product;
-          var productLine=Shop.ProductLine;
-           console.log(productLine);
-            if(productLine.length==0){
+          var productLine=store.ProductLine;
+
+              if(productLine.length==0){
                res.send({success:0,msg:"There aren't any products atm in the store, check later!"})
               return;
             }
-  /*         var Product=req.body.Product;
-         var productLine=Shop.ProductLine;
+            var index=-1;
+             for(var i=0;i<productLine.length;i++){
+                if(productLine[i].product==product){
 
-         if (productLine.length==0){
-           res.send({success:0,msg:"There aren't any products atm in store, check later!"})
-           return;
-         }
-           var ProductIndex=ProductLine.indexOf(Product);
-              console.log(ProductIndex);
-             //var price=ProductLine[ProductIndex].price;
-            //var quantity=ProductLine[ProductIndex].quantity;
+                  index=i;
+                  break;
+                }
+             }
+             if(index==-1){
+               res.send({success:0,msg:"Product doesn't exist! Sorry!"});
+               return;
+             }
+             var targetProduct=productLine[index];
 
-          /*if(req.body.quantity>quantity||req.body.quantity<0){
-            res.send({success:0,msg:"Invalid quantity!"})
-            return;
-          } */
+            var inventoryQuantity=targetProduct.quantity;
+            var intentPurchasedQuantity=req.body.Quantity;
 
-          //We post this order to store.js
-          //Afterwards we must subtract the quantity from the store avillable
-        // console.log(ProductLine.indexOf(product));
 
-    res.send(Shop);
+
+             if(intentPurchasedQuantity>inventoryQuantity||intentPurchasedQuantity<0||inventoryQuantity<0){
+               res.send({success:0,msg:"Invalid quantity!"});
+               return;
+             }
+             targetProduct.quantity=inventoryQuantity-intentPurchasedQuantity;
+           //We shall make a minor update here
+
+      Shop.update(
+                {_id:store._id},
+                {$set:{"ProductLine.$[i].quantity":targetProduct.quantity}},
+                {arrayFilters: [{"i._id": targetProduct._id}]}
+              ).then(function(user){
+             console.log(user);
+             });
+
+              var Order={
+                "product":req.body.Product,
+                "price":targetProduct.price,
+                "quantity":req.body.Quantity
+              }
+              store.order.push(Order);
+               console.log(store);
+
+               Shop.update({
+                 _id : store._id
+               },{
+                 $push: {"order": {product:req.body.Product,price:targetProduct.price,quantity:req.body.Quantity}}
+               }).then(function(ok){
+                 console.log(ok);
+               });
+    res.send(store);
       }else{
         res.send({success:0,msg:"Shop doesnt exist"});
       }
     });
 });
-
-router.get('/test',(req,res)=>{
-
-  res.send('GET ROUTE')
-
-});
-
 
 
 module.exports=router;

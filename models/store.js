@@ -13,10 +13,12 @@ const ShopSchema=new Schema(
       product:String,
       price:Number,
       quantity:Number
+    }],
+    order:[{
+      product:String,
+      price:Number,
+      quantity:Number
     }]
-
-
-
  }
 );
 
