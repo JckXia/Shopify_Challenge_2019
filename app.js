@@ -8,7 +8,7 @@ var bodyParser=require('body-parser');
 var mongoose=require('mongoose');
 
 //Connect to a mongodb database
-mongoose.connect(process.env.MONGODB_URI||'mongodb://localhost/shopify');
+mongoose.connect(process.env.MONGODB_URI||'mongodb://localhost/shopify',{ useNewUrlParser: true });
 mongoose.Promise=global.Promise;
 
 

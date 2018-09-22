@@ -1,8 +1,13 @@
 const express=require('express');
 const router=express.Router();
 const Shop=require('../models/store');
+var passwordHash=require('password-hash');
 var MongoClient=require('mongodb').MongoClient;
 
+//Security stuff, jwt tokens,passport login strategy etc.
+const jwt=require('jsonwebtoken');
+const passport=require('passport');
+require('../config/passport')(passport);
 
 // Routes to implement:
 /*
@@ -11,6 +16,55 @@ READ:   Browse product lines
 UPDATE  Add new products to the product line.
 DELETE  Delete entire stores, delete products
 */
+//TODO: Update product catalogue from the owner's perspective
+//       Make two routes, one for login one for changing the product catalogue
+// The idea is that, we are allowed to make changes to product catalogue if and only
+// we have verified the owner. Both however, are secured by JWT token
+//Login route, with jwt token
+
+/*
+ Format of request
+   {
+    "ShopName":"Microsoft"
+    "OwnerName":Jack
+    "OwnerPassword":14050079
+ }
+*/
+
+router.post('/shopify/login',(req,res)=>{
+  Shop.findOne({ShopName:req.body.ShopName},function(err,store){
+     if(err) throw err;
+    if(store){
+
+        if(req.body.OwnerName==store.OwnerName){
+          if(passwordHash.verify(req.body.OwnerPassword,store.OwnerPassword)){
+            const token=jwt.sign(JSON.stringify(store),'secret');
+            res.send({
+              success:1,
+              token:'JWT '+token,
+              Owner:{
+                Shop:req.body.OwnerName,
+                OwnerName:req.body.OwnerName
+              }
+            });
+          }else{
+            res.send({success:0,msg:"Incorrect Password!"});
+          }
+        }else{
+       res.send({success:0,msg:"Incorrect Username"});
+     }
+    }else{
+      res.send('Store not found!!')
+    }
+  })
+});
+
+//Testing JWT
+router.get('/shopify/test',passport.authenticate('jwt',{session:false}),(req,res,next)=>{
+
+  res.send(req.user);
+});
+
 
 //READ
 
@@ -43,6 +97,7 @@ router.post('/shopify/CreateStore',(req,res)=>{
         if(store){
           res.send({success:0,msg:"Shop already exists"})
         }else{
+        req.body.OwnerPassword=passwordHash.generate(req.body.OwnerPassword);
          Shop.create(req.body).then(function(ninja){
            res.json(ninja);
          });
