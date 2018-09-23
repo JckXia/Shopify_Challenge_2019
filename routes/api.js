@@ -3,8 +3,6 @@ const router=express.Router();
 const Shop=require('../models/store');
 var passwordHash=require('password-hash');
 var MongoClient=require('mongodb').MongoClient;
-
-//Security stuff, jwt tokens,passport login strategy etc.
 const jwt=require('jsonwebtoken');
 const passport=require('passport');
 require('../config/passport')(passport);
@@ -16,12 +14,6 @@ READ:   Browse product lines
 UPDATE  Add new products to the product line.
 DELETE  Delete entire stores, delete products
 */
-//TODO: Update product catalogue from the owner's perspective
-//       Make two routes, one for login one for changing the product catalogue
-// The idea is that, we are allowed to make changes to product catalogue if and only
-// we have verified the owner. Both however, are secured by JWT token
-//Login route, with jwt token
-//TODO: Make a delete route, for deleting product lines , Include an area to add up the cost of an order
 
 /*TODO: 1. Test the code
    1. Test the code
@@ -29,6 +21,9 @@ DELETE  Delete entire stores, delete products
    3. Clean up notations
    4. Write documentation for API
 */
+
+
+
 /*
  Format of request
    {
@@ -38,6 +33,7 @@ DELETE  Delete entire stores, delete products
  }
 */
 
+// LOGIN
 router.post('/shopify/login',(req,res)=>{
   Shop.findOne({ShopName:req.body.ShopName},function(err,store){
      if(err) throw err;
@@ -61,16 +57,11 @@ router.post('/shopify/login',(req,res)=>{
        res.send({success:0,msg:"Incorrect Username"});
      }
     }else{
-      res.send('Store not found!!')
+      res.send({success:0,msg:'Store not found!!'})
     }
   })
 });
 
-//Testing JWT
-//TODO:
-// Will be able to handle changing qunaitiy of products, adding new products
-// Nromal customers does not have access to the products
-// TODO:
 
 /*
 {
@@ -90,7 +81,7 @@ router.delete('/shopify/AdminRemove',passport.authenticate('jwt',{session:false}
 
             });
 
-          res.send(store);
+          res.send({success:1,msg:"Successfully removed the product from catalogue"});
        }else{
          res.send({success:0,msg:"Store no longer exists!"});
        }
@@ -107,7 +98,7 @@ router.delete('/shopify/AdminRemove',passport.authenticate('jwt',{session:false}
 
 router.post('/shopify/AdminAdd',passport.authenticate('jwt',{session:false}),(req,res,next)=>{
 
-  console.log(req.body);
+
    //First, we must find the store in target.
    Shop.findOne({ShopName:req.user.ShopName},function(err,store){
       if(err) throw err;
@@ -127,9 +118,9 @@ router.post('/shopify/AdminAdd',passport.authenticate('jwt',{session:false}),(re
          },{
            $push: {"ProductLine": {product:req.body.Product,price:req.body.Price,quantity:req.body.Quantity}}
          }).then(function(ok){
-           console.log(ok);
+
          });
-          res.send(store);
+          res.send({success:1,msg:"Product added!"});
        }else{
          var targetProduct=ProductLine[index];
          Shop.update(
@@ -137,17 +128,17 @@ router.post('/shopify/AdminAdd',passport.authenticate('jwt',{session:false}),(re
                    {$set:{"ProductLine.$[i].quantity":req.body.Quantity}},
                    {arrayFilters: [{"i._id": targetProduct._id}]}
                  ).then(function(user){
-                console.log(user);
+
                 });
 
-         res.send(store);
+         res.send({success:1,msg:"Update succeeded!"});
        }
 
       }else{
         res.send('Store not found!');
       }
    });
-  //res.send(req.user);
+
 });
 
 
@@ -177,7 +168,7 @@ router.post('/shopify/browse',(req,res)=>{
 This route creates entire stores, with basic information about its owner, the name of the store, etc
 */
 router.post('/shopify/CreateStore',(req,res)=>{
-   console.log(req.body);
+
     Shop.findOne({ShopName:req.body.ShopName},function(err,store){
        if(err) throw err;
         if(store){
@@ -185,7 +176,7 @@ router.post('/shopify/CreateStore',(req,res)=>{
         }else{
         req.body.OwnerPassword=passwordHash.generate(req.body.OwnerPassword);
          Shop.create(req.body).then(function(ninja){
-           res.json(ninja);
+           res.json({success:0,msg:"Successfully Created shop!"});
          });
         }
     })
@@ -201,12 +192,7 @@ router.post('/shopify/CreateStore',(req,res)=>{
   "Product":"Milk"
   "Quantity":20
 }
-NOTE:
-For this part, we need to make three checks:
-IF shopname doesnt exist-> res.send err
-IF product doesn't exist -> res.send err
-IF quantity < 0 || quantity > quantity in stock -> Invalid quantity
-Else, find the product, the associated price and return the result
+
 */
 router.post('/shopify/purchase',(req,res)=>{
     Shop.findOne({ShopName:req.body.ShopName},function(err,store){
@@ -243,14 +229,14 @@ router.post('/shopify/purchase',(req,res)=>{
                return;
              }
              targetProduct.quantity=inventoryQuantity-intentPurchasedQuantity;
-           //We shall make a minor update here
+
 
       Shop.update(
                 {_id:store._id},
                 {$set:{"ProductLine.$[i].quantity":targetProduct.quantity}},
                 {arrayFilters: [{"i._id": targetProduct._id}]}
               ).then(function(user){
-             console.log(user);
+
              });
 
               var Order={
@@ -259,16 +245,16 @@ router.post('/shopify/purchase',(req,res)=>{
                 "quantity":req.body.Quantity
               }
               store.order.push(Order);
-               console.log(store);
+
 
                Shop.update({
                  _id : store._id
                },{
                  $push: {"order": {product:req.body.Product,price:targetProduct.price,quantity:req.body.Quantity}}
                }).then(function(ok){
-                 console.log(ok);
+
                });
-    res.send(store);
+    res.send({success:1,msg:"Succcessfully made purchase"});
       }else{
         res.send({success:0,msg:"Shop doesnt exist"});
       }
