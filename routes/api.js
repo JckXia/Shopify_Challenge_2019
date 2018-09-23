@@ -21,7 +21,14 @@ DELETE  Delete entire stores, delete products
 // The idea is that, we are allowed to make changes to product catalogue if and only
 // we have verified the owner. Both however, are secured by JWT token
 //Login route, with jwt token
+//TODO: Make a delete route, for deleting product lines , Include an area to add up the cost of an order
 
+/*TODO: 1. Test the code
+   1. Test the code
+   2. Eliminate res.send(stores)
+   3. Clean up notations
+   4. Write documentation for API
+*/
 /*
  Format of request
    {
@@ -60,9 +67,87 @@ router.post('/shopify/login',(req,res)=>{
 });
 
 //Testing JWT
-router.get('/shopify/test',passport.authenticate('jwt',{session:false}),(req,res,next)=>{
+//TODO:
+// Will be able to handle changing qunaitiy of products, adding new products
+// Nromal customers does not have access to the products
+// TODO:
 
-  res.send(req.user);
+/*
+{
+ "Product":"Chicken"
+}
+*/
+router.delete('/shopify/AdminRemove',passport.authenticate('jwt',{session:false}),(req,res,next)=>{
+   Shop.findOne({ShopName:req.user.ShopName},function(err,store){
+      if(err) throw err;
+       if(store){
+          var ProductToRemove=req.body.Product;
+            Shop.update({
+              _id:store._id
+            },{
+              $pull:{"ProductLine":{product:ProductToRemove}}
+            }).then(function(ok){
+
+            });
+
+          res.send(store);
+       }else{
+         res.send({success:0,msg:"Store no longer exists!"});
+       }
+   });
+});
+
+/*
+{
+ "Product":"Chicken",
+ "Price":"50",
+ "Quantity":20
+}
+*/
+
+router.post('/shopify/AdminAdd',passport.authenticate('jwt',{session:false}),(req,res,next)=>{
+
+  console.log(req.body);
+   //First, we must find the store in target.
+   Shop.findOne({ShopName:req.user.ShopName},function(err,store){
+      if(err) throw err;
+      if(store){
+
+        var index=-1;
+       var ProductLine=store.ProductLine;
+       for(var i=0;i<ProductLine.length;i++){
+          if(ProductLine[i].product==req.body.Product){
+             index=i;
+             break;
+          }
+       }
+       if(index==-1){
+         Shop.update({
+           _id : store._id
+         },{
+           $push: {"ProductLine": {product:req.body.Product,price:req.body.Price,quantity:req.body.Quantity}}
+         }).then(function(ok){
+           console.log(ok);
+         });
+          res.send(store);
+       }else{
+         var targetProduct=ProductLine[index];
+         Shop.update(
+                   {_id:store._id},
+                   {$set:{"ProductLine.$[i].quantity":req.body.Quantity}},
+                   {arrayFilters: [{"i._id": targetProduct._id}]}
+                 ).then(function(user){
+                console.log(user);
+                });
+
+         res.send(store);
+       }
+
+      }else{
+        res.send('Store not found!');
+      }
+   });
+  //res.send(req.user);
 });
 
 
@@ -74,6 +159,7 @@ router.post('/shopify/browse',(req,res)=>{
     if(store){
        res.send(store.ProductLine);
     }else{
+
       res.send('Store not found!!')
     }
   })
