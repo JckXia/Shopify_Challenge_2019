@@ -15,13 +15,7 @@ UPDATE  Add new products to the product line.
 DELETE  Delete entire stores, delete products
 */
 
-/*TODO: 1. Test the code
-   1. Test the code
-   2. Eliminate res.send(stores)
-   3. Clean up notations
-   4. Write documentation for API
-*/
-
+ 
 
 
 /*
