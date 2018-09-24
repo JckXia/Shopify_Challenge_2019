@@ -34,13 +34,13 @@ localhost:8000/shopify/login
   in the productLine 
 
 ##### Request body example: 
-
+```
 {
  "ShopName":"Microsoft"
  "OwnerName":Jack
  "OwnerPassword":1857
 }
-
+```
 ___
 ##### AdminRemove Route url:
 localhost:8000/shopify/AdminRemove
@@ -52,9 +52,11 @@ localhost:8000/shopify/AdminRemove
   of a given store
 
 ##### Request body example: 
+```
 {
  "Product":"Chicken"
 }
+```
 ----
 ##### AdminAdd Route url:
 localhost:8000/shopify/AdminAdd
@@ -66,11 +68,13 @@ localhost:8000/shopify/AdminAdd
   of a given store
 
 ##### Request body example: 
+```
 {
  "Product":"Chicken",
  "Price":"50",
  "Quantity":20
 }
+```
 ---
 ##### Browse Route url:
 localhost:8000/shopify/browse
@@ -80,9 +84,10 @@ localhost:8000/shopify/browse
   A post request is made with the request body containing the 
   name of the shop. The productLine of that particular store will be returned
 ##### Request body example: 
-{
+```{
  "ShopName":"MSFT"
 }
+```
 --- 
 ##### CreateStore Route url:
 localhost:8000/shopify/CreateStore
@@ -91,13 +96,15 @@ localhost:8000/shopify/CreateStore
   A post request is made with the request body containing the 
   basic schema of the store
 ##### Request body example: 
-{
+```
+ {
  "OwnerName":"Jack",
  "OwnerPassword":"134",
   "ShopName":"Rasp",
    "ProductLine":[{"product":"Milk","price":15,"quantity":20}],
    "order":[]
 }
+```
 ---
 ##### Purchase Route url:
 localhost:8000/shopify/purchase
@@ -105,7 +112,8 @@ localhost:8000/shopify/purchase
 ##### Description:
   A post request is made with the request body containing the 
   store name, product intent to purchase and the quantity of the product
-##### Request body example: 
+##### Request body example:
+```
 {
  "OwnerName":"Jack",
  "OwnerPassword":"134",
@@ -113,6 +121,7 @@ localhost:8000/shopify/purchase
    "ProductLine":[{"product":"Milk","price":15,"quantity":20}],
    "order":[]
 }
+````
 ---
 
 ## Dependencies:
