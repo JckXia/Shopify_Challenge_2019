@@ -1,0 +1,1 @@
+{"_id":{"$oid":"5ba8447826229c483402548d"},"OwnerName":"Jack","OwnerPassword":"sha1$6968fed9$1$f58419b08a72096ed3b9df8b072a88b5cfefdbfb","ShopName":"Jack's Computers","ProductLine":[{"_id":{"$oid":"5ba8447826229c483402548e"},"product":"GTX1080","price":1500,"quantity":20}],"order":[],"__v":0}
